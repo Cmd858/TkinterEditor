@@ -32,7 +32,8 @@ class SideBar:
     def populateBar(self):
         self.create_widget('widget', 'Label', 'label')  # populate the sidebar with function widgets
         self.create_widget('widget', 'Button', 'button')
-        self.create_widget('cursor', 'spray', 'spraycan')
+        self.create_widget('widget', 'checkbox', 'checkbox')
+        self.create_widget('cursor', 'spray', 'spraycan')   # cursor widgets currently serve no purpose
         self.create_widget('cursor', 'dotbox', 'dotbox')
         self.create_widget('cursor', 'move', 'fleur')
         self.create_widget('cursor', 'arrow', 'arrow')

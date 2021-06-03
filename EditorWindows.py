@@ -20,7 +20,10 @@ class EditorWindow:
         self.destroySelf()
 
     def destroySelf(self):
-        self.window.destroy()
+        try:
+            self.window.destroy()
+        except:
+            pass
 
 
 class PropertyWindow:  # property selection for editor window

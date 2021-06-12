@@ -32,9 +32,15 @@ class SideBar:
     def populateBar(self):
         self.create_widget('widget', 'Label', 'label')  # populate the sidebar with function widgets
         self.create_widget('widget', 'Button', 'button')
-        self.create_widget('widget', 'checkbox', 'checkbox')
-        self.create_widget('cursor', 'spray', 'spraycan')   # cursor widgets currently serve no purpose
-        self.create_widget('cursor', 'dotbox', 'dotbox')
-        self.create_widget('cursor', 'move', 'fleur')
+        self.create_widget('widget', 'Checkbox', 'checkbox')
+        self.create_widget('widget', 'Radio', 'radio')
+        self.create_widget('widget', 'Entry', 'entry')
+        self.create_widget('widget', 'Text', 'text')
+
+        #self.create_widget('cursor', 'spray', 'spraycan')   # cursor widgets currently serve no purpose
+        #self.create_widget('cursor', 'dotbox', 'dotbox')
+        self.create_widget('cursor', 'move', 'fleur')  # no current plans for commented cursors, pls help, not limited
+        #self.create_widget('cursor', 'cross', 'cross')  # to these cursors
+        #self.create_widget('cursor', 'watch', 'watch')
         self.create_widget('cursor', 'arrow', 'arrow')
 

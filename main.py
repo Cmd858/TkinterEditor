@@ -24,10 +24,13 @@ class WindowManager:
         self.sidebar = SideBar(self)  # initiate sidebar
         self.sidebar.populateBar()  # populate sidebar
         self.setBinds(self.window)  # set window keybinds for event callbacks
-        self.cursor = 'mouse'
+        self.cursor = 'arrow'
         self.drawBox = None
         self.drawBoxCoords = (0, 0)
         self.mouseDown = False
+        self.propertyWindow = None  # use one variable for property windows to prevent duplication
+        self.hovered = None
+        self.hoveredxy = (0, 0)
 
     def run(self):
         self.window.mainloop()  # run main window event loop
@@ -40,40 +43,64 @@ class WindowManager:
 
     def clickDrag(self, event):
         x, y = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()
-        # print(x, y, event.x, event.y)
-        if 0 < x < self.scrW - self.barW and 0 < y < self.scrH:
-            etype = str(event.type)  # get event type as string for comparison
+        etype = str(event.type)  # get event type as string for comparison
+        if etype == 'ButtonPress':
+            self.mouseDown = True
+        elif etype == 'ButtonRelease':
+            self.mouseDown = False
+        if self.propertyWindow is not None:  # destroy property window if it exists
+            self.propertyWindow.destroySelf()
+        if self.cursor == 'arrow':
+            # print(x, y, event.x, event.y)
+            if 0 < x < self.scrW - self.barW and 0 < y < self.scrH:
+                if etype == 'ButtonPress':
+                    self.x1 = event.x  # grab mousedown positions
+                    self.y1 = event.y
+                    if self.drawBox is not None:
+                        self.drawBox.destroy()  # destroy drawbox if mouseup event didn't take care of it
+                        self.drawBox = None
+                    # ^ box to show where a widget will be drawn
+                elif etype == 'ButtonRelease':
+                    # print('makingwidget')  # stating the obvious
+                    if self.drawBox is not None:
+                        self.drawBox.destroy()
+                        self.drawBox = None  # destroy and reset to stop calling motion events
+                    self.x2 = event.x  # grab mouseup positions
+                    self.y2 = event.y
+                    if abs(self.x1 - self.x2) < 5 or abs(self.y1 - self.y2) < 5:
+                        return  # prevent really small widgets from being created
+                    elif 0 < self.x1 < self.scrW - self.barW and 0 < self.y1 < self.scrH and \
+                            0 < self.x2 < self.scrW - self.barW and 0 < self.y2 < self.scrH:  # double line bc long
+                        self.placeWidget(self.widgetType, self.x1, self.y1, self.x2, self.y2)  # place the widget
+        elif self.cursor == 'fleur':  # the move cursor with weird name
             if etype == 'ButtonPress':
-                self.mouseDown = True
-                self.x1 = event.x  # grab mousedown positions
-                self.y1 = event.y
-                if self.drawBox is not None:
-                    self.drawBox.destroy()  # destroy drawbox if mouseup event didn't take care of it
-                    self.drawBox = None
-                # ^ box to show where a widget will be drawn
+                try:
+                    hovered = self.window.winfo_containing(event.x_root, event.y_root)  # get hovered widget
+                    widgetindex = [i[1] for i in self.widgets].index(hovered)  # invalid target raises: s.hovered = None
+                    widgetset = self.widgets[widgetindex]  # get index of widget w/ list
+                    self.hoveredindex = widgetindex  # index used for replacing co-ords
+                    self.hovered = widgetset[0]  # set hovered widget as frame not actual widget
+                    self.hoveredxy = (event.x, event.y)  # set coords of x and y for relative positioning
+                except ValueError:  # only move widgets that were placed by user
+                    self.hovered = None  # set to none if no current moving object
+                    self.hoveredxy = (0, 0)
             elif etype == 'ButtonRelease':
-                self.mouseDown = False
-                # print('makingwidget')  # stating the obvious
-                if self.drawBox is not None:
-                    self.drawBox.destroy()
-                    self.drawBox = None  # destroy and reset to stop calling motion events
-                self.x2 = event.x  # grab mouseup positions
-                self.y2 = event.y
-                if abs(self.x1 - self.x2) < 5 or abs(self.y1 - self.y2) < 5:
-                    return  # prevent really small widgets from being created
-                elif 0 < self.x1 < self.scrW - self.barW and 0 < self.y1 < self.scrH and \
-                        0 < self.x2 < self.scrW - self.barW and 0 < self.y2 < self.scrH:  # double line bc long
-                    self.placeWidget(self.widgetType, self.x1, self.y1, self.x2, self.y2)  # calls to place the widget
+                if self.hovered is not None:
+                    x1, y1 = self.hovered.winfo_x(), self.hovered.winfo_y()
+                    x2, y2 = x1 + self.hovered.winfo_width(), y1 + self.hovered.winfo_height()
+                    self.coords[self.hoveredindex] = ((x1, y1), (x2, y2))
 
     def editWidget(self, event):
-        # print(dir(event))
         x, y = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()
         # ^ absolute value on screen - absolute value of main = mouse pos relative to main window bc it can't be easy
         for coords in self.coords:
             if (coords[0][0] >= x >= coords[1][0] or coords[0][0] <= x <= coords[1][0]) \
                     and (coords[0][1] >= y >= coords[1][1] or coords[0][1] <= y <= coords[1][1]):  # if x2 > x1 etc
                 self.selectedWidget = self.widgets[self.coords.index(coords)]  # set the currently selected widget
-                PropertyWindow(self.window, self, self.selectedWidget)  # open property editor window
+                if self.propertyWindow is not None:
+                    self.propertyWindow.destroySelf()
+                self.propertyWindow = PropertyWindow(self.window, self,
+                                                     self.selectedWidget)  # open property editor window
 
     def placeWidget(self, wigtype, x1, y1, x2, y2):
         if wigtype is None:  # no type so do nothing
@@ -93,15 +120,23 @@ class WindowManager:
                                                      height=int(abs(y2 - y1)))))
         elif wigtype == 'checkbox':
             self.widgets.append((label_frame, Checkbutton(label_frame,
-                                                          text='button', width=int(abs(x2 - x1) / 5),
+                                                          text='checkbox', width=int(abs(x2 - x1) / 5),
                                                           height=int(abs(y2 - y1)))))
+        elif wigtype == 'radio':
+            self.widgets.append((label_frame, Radiobutton(label_frame,
+                                                          text='radioButton', width=int(abs(x2 - x1) / 5),
+                                                          height=int(abs(y2 - y1)))))
+        elif wigtype == 'entry':
+            self.widgets.append((label_frame, Entry(label_frame,
+                                                    text='entry', width=int(abs(x2 - x1) / 5))))
+        elif wigtype == 'text':
+            self.widgets.append((label_frame, Text(label_frame,
+                                                   width=int(abs(x2 - x1) / 5),
+                                                   height=int(abs(y2 - y1)))))
         self.widgets[-1][1].pack()  # make widgets with pixel lengths instead of chars and lines
         self.widgets[-1][0].place(x=x1 if x2 - x1 >= 0 else x2,
                                   y=y1 if y2 - y1 >= 0 else y2)  # allow for x1 > x1 etc.
-        self.coords.append(((x1, y1), (x2, y2)))  # coords for reference later
-
-    def newWindow(self):
-        newWindow = EditorWindow(self.window, self, 'height')
+        self.coords.append(((x1, y1), (x2, y2)))  # co-ords for reference later
 
     def returnEditor(self, key, value):
         print(key, value)
@@ -109,7 +144,7 @@ class WindowManager:
         try:
             print('changing')
             self.selectedWidget[1][key] = value  # [1] for widget out of (frame, widget) tuple  # change keyed value
-        except _tkinter.TclError as e:
+        except _tkinter.TclError as e:  # create an alert that shows why what you put can't be done
             print(e)
             alert = Tk()
             alert.title('Error')
@@ -125,36 +160,33 @@ class WindowManager:
         EditorWindow(self.window, self, value)
 
     def drawMotion(self, event):
-        """The hell function"""
-        if self.drawBox is None and self.mouseDown == True:
-            ax, ay = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()  # not sure tbh
-            self.drawBox = Frame(bd=2, bg='black', width=0, height=0, relief='raised')
-            self.drawBox.place(x=ax, y=ay)
-            self.drawBoxCoords = (ax, ay)
-        if self.drawBox is not None and self.mouseDown == True:
-            # dx === ax - mx therefore mx === ax - dx
-            ax = self.drawBox.winfo_x()
-            ay = self.drawBox.winfo_y()
-            #mx = event.x - ax  # current mouse co-ords relative to ax
-            #my = event.y - ay
-            dx = self.drawBoxCoords[0]
-            dy = self.drawBoxCoords[1]  # definitive co-ords, where the mouse started
-            mx = event.x
-            my = event.y
-            #print(ax, ay, dx, dy, mx, my)
-            sx = mx  # cover for .place() re-requiring x coord in y check, idk why s tho
-            if mx - ax > 0:
-                self.drawBox['width'] = mx - ax
-            else:
-                sx = mx - ax
-                self.drawBox.place(x=sx, y=ay)
-                self.drawBox['width'] = ax - mx
-            if my - ay > 0:
-                self.drawBox['height'] = my - ay  # todo: fix this crap code
-            else:
-                self.drawBox.place(x=sx, y=my - ay)  # bit of a mess but might work
-                self.drawBox['height'] = ay - my
-            # ^ don't ask, I don't know either
+        if self.cursor == 'arrow':
+            if self.drawBox is None and self.mouseDown == True:
+                ax, ay = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()  # not sure tbh
+                self.drawBox = Frame(bd=2, bg='black', width=0, height=0, relief='raised')
+                self.drawBox.place(x=ax, y=ay)
+                self.drawBoxCoords = (ax, ay)
+            if self.drawBox is not None and self.mouseDown == True:
+                dx = self.drawBoxCoords[0]
+                dy = self.drawBoxCoords[1]  # definitive co-ords, where the mouse started
+                mx = event.x
+                my = event.y  # current mouse co-ords
+                sx = dx  # cover for .place() re-requiring x coord in y check, idk why tho
+                if mx > dx:  # positive x
+                    self.drawBox['width'] = mx - dx  # dist between mx and dx is width
+                else:
+                    sx = mx
+                    self.drawBox.place(x=sx, y=dy)
+                    self.drawBox['width'] = dx - mx  # same as ^ but with negatives so reversed equation
+                if my > dy:  # positive y
+                    self.drawBox['height'] = my - dy
+                else:
+                    self.drawBox.place(x=sx, y=my)  # final place if necessary
+                    self.drawBox['height'] = dy - my
+        elif self.cursor == 'fleur' and self.mouseDown is True:
+            x, y = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()
+            if self.hovered is not None:
+                self.hovered.place(x=x - self.hoveredxy[0], y=y - self.hoveredxy[1])  # move smoothly
 
 
 win = WindowManager()  # initiate class

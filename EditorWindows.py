@@ -31,7 +31,7 @@ class PropertyWindow:  # property selection for editor window
         self.root = root  # root window
         self.manager = manager  # class for window management in main
         self.widget = widget[1]  # widget from which the properties are taken  # also [1] bc its list of [frame, widget]
-        self.window = Toplevel(root, relief='ridge', bd=2)
+        self.window = Toplevel(root, relief='ridge', bd=1)
         self.window.title("Edit")
         mx, my = self.window.winfo_pointerxy()
         self.window.geometry(f"200x400+{mx}+{my}")
@@ -60,4 +60,5 @@ class PropertyWindow:  # property selection for editor window
             self.destroySelf()
 
     def destroySelf(self):
+        self.manager.propertyWindow = None
         self.window.destroy()

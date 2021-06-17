@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import *
 from SideBar import SideBar
 from EditorWindows import EditorWindow, PropertyWindow
+from Constructor import Constructor
 
 
 class WindowManager:
@@ -135,12 +136,13 @@ class WindowManager:
                                                    height=int(abs(y2 - y1)))))
         self.widgets[-1][1].pack()  # make widgets with pixel lengths instead of chars and lines
         self.widgets[-1][0].place(x=x1 if x2 - x1 >= 0 else x2,
-                                  y=y1 if y2 - y1 >= 0 else y2)  # allow for x1 > x1 etc.
+                                  y=y1 if y2 - y1 >= 0 else y2)  # allow for x1 > x2 etc.
         self.coords.append(((x1, y1), (x2, y2)))  # co-ords for reference later
 
     def returnEditor(self, key, value):
         print(key, value)
-        # print(self.selectedWidget)
+        print(dir(self.selectedWidget[1]))
+        print(self.selectedWidget[1].__class__)
         try:
             print('changing')
             self.selectedWidget[1][key] = value  # [1] for widget out of (frame, widget) tuple  # change keyed value
@@ -187,6 +189,11 @@ class WindowManager:
             x, y = event.x_root - self.window.winfo_rootx(), event.y_root - self.window.winfo_rooty()
             if self.hovered is not None:
                 self.hovered.place(x=x - self.hoveredxy[0], y=y - self.hoveredxy[1])  # move smoothly
+
+    def writeCode(self):
+        print('writing')
+        constructor = Constructor(self.window, self)
+        constructor.build()
 
 
 win = WindowManager()  # initiate class

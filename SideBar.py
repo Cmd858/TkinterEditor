@@ -20,6 +20,9 @@ class SideBar:
         elif btype == 'cursor':
             button = Button(self.sidebar, text=text, command=lambda: self.setCursor(convtype))  # make command button
             button.pack(side='bottom', anchor='sw')
+        elif btype == 'write':
+            button = Button(self.sidebar, text=text, command=lambda: self.parent.writeCode())  # make command button
+            button.pack(side='bottom', anchor='se')
 
     def setType(self, convtype):
         self.parent.widgetType = convtype  # change type of widget being deployed
@@ -37,10 +40,11 @@ class SideBar:
         self.create_widget('widget', 'Entry', 'entry')
         self.create_widget('widget', 'Text', 'text')
 
-        #self.create_widget('cursor', 'spray', 'spraycan')   # cursor widgets currently serve no purpose
+        #self.create_widget('cursor', 'spray', 'spraycan')   #
         #self.create_widget('cursor', 'dotbox', 'dotbox')
         self.create_widget('cursor', 'move', 'fleur')  # no current plans for commented cursors, pls help, not limited
         #self.create_widget('cursor', 'cross', 'cross')  # to these cursors
         #self.create_widget('cursor', 'watch', 'watch')
         self.create_widget('cursor', 'arrow', 'arrow')
+        self.create_widget('write', 'write', 'arrow')
 

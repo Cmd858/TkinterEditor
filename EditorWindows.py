@@ -62,3 +62,27 @@ class PropertyWindow:  # property selection for editor window
     def destroySelf(self):
         self.manager.propertyWindow = None
         self.window.destroy()
+
+class EntryWindow:
+    def __init__(self, root, manager, callback, text):
+        self.root = root  # root window
+        self.manager = manager  # class for window management in main
+        self.callback = callback
+        self.window = Toplevel(root)
+        self.window.title("Edit")
+        self.window.geometry(f"200x70+{root.winfo_rootx()+50}+{root.winfo_rooty()+50}")
+        # self.window.overrideredirect(1)
+        Label(self.window, text=text).pack(side='top')
+        self.entry = Entry(self.window, text='hello')
+        self.entry.pack(side='top')
+        self.enter = Button(self.window, text='Enter', command=self.returnValue).pack(side='top')
+
+    def returnValue(self):
+        self.callback(self.entry.get())
+        self.destroySelf()
+
+    def destroySelf(self):
+        try:
+            self.window.destroy()
+        except:
+            pass

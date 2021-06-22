@@ -3,13 +3,15 @@ class Constructor:
         self.window = window
         self.parent = parent
         self.fulltext = ''  # will be appended to, constructing the code object into one string
-        self.basetext = '''from tkinter import *
-\n
+        self.commandtext = ''
+        self.importtext = '\nimport '.join(self.parent.dependencies)
+        self.basetext = '''
+
 class MainWindow:
     def __init__(self):
         self.window = Tk()
         self.window.title('Tkinter Editor')
-        self.scrW = 500
+        self.scrW = 350
         self.scrH = 400
         self.window['bg'] = 'black'
         self.window['width'] = self.scrW
@@ -27,7 +29,6 @@ class MainWindow:
         self.runfunc = '''\n    def run(self):
         self.window.mainloop()
 '''
-        print(self.basetext)
 
     def appendWidgets(self):
         widgetText = '    def appendWidgets(self):\n'
@@ -36,12 +37,13 @@ class MainWindow:
             widgetType, widgetArgs = formatArgs(widget[1])
             widgetText += f'        self.frames.append(Frame(self.window, {frameArgs}))\n'
             widgetText += f'        self.frames[-1].place(x={widget[0].winfo_x()}, y={widget[0].winfo_y()})\n'
-            widgetText += f'        self.frames[-1].pack_propagate(0)'
+            widgetText += f'        self.frames[-1].pack_propagate(0)\n'
             widgetText += f'        self.widgets.append({widgetType}(self.frames[-1], {widgetArgs}))\n'
             widgetText += f'        self.widgets[-1].pack()\n'
         return widgetText
 
     def build(self):  # construct the program string
+        self.fulltext += self.importtext
         self.fulltext += self.basetext
         self.fulltext += self.appendWidgets()
         self.fulltext += self.runfunc
@@ -58,7 +60,8 @@ def formatArgs(widget):  # format non-default args into input  # pretty smart lo
     print(compdict)
     keys = [i for i in normdict if normdict[i] != compdict[i] and i != 'background']  # last one > stopping dupe
     values = [compdict[i] for i in keys]
-    args = ', '.join([f'{i}="{j}"' for (i, j) in zip(keys, values)])  # arguments for widgets
+    args = ', '.join([f'{i}="{j}"' if i != 'command' else f'{i}={j}' for (i, j) in zip(keys, values)])
+    # arguments for widgets
     print(keys)
     print(values)
     print(args)

@@ -1,4 +1,5 @@
 from tkinter import *
+from EditorWindows import EntryWindow
 
 class SideBar:
     def __init__(self, parent):
@@ -10,6 +11,7 @@ class SideBar:
         self.sidebar = Label(self.window)  # create sidebar area, should probs use frame but ah well
         self.barwidth = 150  # width of bar, hardcoded for some reason #TODO: make this reference main
         self.sidebar.place(x=self.winW - self.barwidth, y=0, width=self.barwidth, height=self.winH)  # place sidebar
+        #self.sidebar.pack(side='right', anchor='ne')
         self.sidebar['bg'] = 'grey'  # set background colour and relief of sidebar
         self.sidebar['relief'] = 'ridge'
 
@@ -23,6 +25,12 @@ class SideBar:
         elif btype == 'write':
             button = Button(self.sidebar, text=text, command=lambda: self.parent.writeCode())  # make command button
             button.pack(side='bottom', anchor='se')
+        elif btype == 'dependency':
+            button = Button(self.sidebar, text=text, command=lambda: EntryWindow(self.window,
+                                                                                 self.parent,
+                                                                                 self.parent.addDependency,
+                                                                                 'Add or remove dependency'))
+            button.pack(side='bottom', anchor='ne')
 
     def setType(self, convtype):
         self.parent.widgetType = convtype  # change type of widget being deployed
@@ -42,9 +50,14 @@ class SideBar:
 
         #self.create_widget('cursor', 'spray', 'spraycan')   #
         #self.create_widget('cursor', 'dotbox', 'dotbox')
+        self.create_widget('cursor', 'clone', 'cross_reverse')
+        self.create_widget('cursor', 'join', 'sizing')
+        self.create_widget('cursor', 'delete', 'X_cursor')
         self.create_widget('cursor', 'move', 'fleur')  # no current plans for commented cursors, pls help, not limited
         #self.create_widget('cursor', 'cross', 'cross')  # to these cursors
         #self.create_widget('cursor', 'watch', 'watch')
-        self.create_widget('cursor', 'arrow', 'arrow')
+        self.create_widget('cursor', 'draw', 'arrow')
+
         self.create_widget('write', 'write', 'arrow')
 
+        self.create_widget('dependency', 'module', 'arrow')
